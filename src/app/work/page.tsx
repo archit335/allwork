@@ -40,7 +40,7 @@ export default async function WorkPage({ searchParams }: PageProps<"/work">) {
         <Button type="submit"><Search className="size-4" />Search</Button>
       </form>
       {jobs.length ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {jobs.map((j) => (
             <Link key={j.id} href={`/jobs/${j.id}`} className="group">
               <Card className="flex h-full flex-col p-5 transition group-hover:-translate-y-0.5 group-hover:shadow-lg">

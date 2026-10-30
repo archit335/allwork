@@ -17,7 +17,7 @@ export function WeeklySlotForm() {
           </label>
         ))}
       </div>
-      <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
         <Field label="From" htmlFor="ws-start"><Input id="ws-start" name="start" type="time" defaultValue="09:00" /></Field>
         <Field label="To" htmlFor="ws-end"><Input id="ws-end" name="end" type="time" defaultValue="18:00" /></Field>
         <SubmitButton pendingText="…">Add</SubmitButton>

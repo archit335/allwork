@@ -30,7 +30,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/project
         <Button type="submit"><Search className="size-4" />Search</Button>
       </form>
       {projects.length ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
             const c = COLLAB_LABEL[p.collabType]!;
             return (

@@ -63,7 +63,7 @@ export default async function TalentPage({ searchParams }: PageProps<"/talent">)
         <Button type="submit"><Search className="size-4" />Search</Button>
       </form>
       {rows.length ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {rows.map(({ w, km }) => {
             const p = w.workerProfile!;
             return (

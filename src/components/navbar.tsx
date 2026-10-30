@@ -32,7 +32,7 @@ export async function Navbar() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
           {user ? (
             <>
@@ -53,7 +53,7 @@ export async function Navbar() {
           ) : (
             <>
               <LinkButton href="/login" variant="ghost" size="sm" className="hidden sm:inline-flex">Log in</LinkButton>
-              <LinkButton href="/signup" size="sm" variant="accent">Join free ✦</LinkButton>
+              <LinkButton href="/signup" size="sm" variant="accent"><span className="sm:hidden">Join</span><span className="hidden sm:inline">Join free ✦</span></LinkButton>
             </>
           )}
           <MobileMenu loggedIn={!!user} isAdmin={user?.role === "ADMIN"} />

@@ -78,7 +78,7 @@ export function Hero() {
             <div className="flex items-center gap-2 rounded-[20px] bg-surface p-2">
               <Sparkles className="ml-2 size-5 shrink-0 text-accent-500" aria-hidden />
               <input id="hero-q" name="q" placeholder="What do you need done today?" className="h-12 min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-stone-400 focus:outline-none" />
-              <button className="inline-flex h-12 items-center gap-1.5 rounded-2xl bg-ink px-5 text-sm font-bold text-zap-300 transition hover:bg-brand-700 hover:text-white">
+              <button className="inline-flex h-12 items-center gap-1.5 rounded-2xl bg-zap-400 px-5 text-sm font-extrabold text-ink transition hover:bg-zap-300">
                 Ask AI <ArrowRight className="size-4" />
               </button>
             </div>

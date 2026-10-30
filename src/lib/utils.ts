@@ -1,7 +1,13 @@
 import clsx, { type ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
+
+// Teach tailwind-merge our custom colour scales so later classes reliably override earlier ones.
+const twMerge = extendTailwindMerge({
+  extend: { theme: { color: ["brand", "accent", "zap", "ink", "bg", "surface", "fg"].flatMap((c) => [c, ...["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"].map((s) => `${c}-${s}`)]) } },
+});
 
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 export function slugify(s: string) {

@@ -60,7 +60,7 @@ export default async function CalendarPage() {
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-5">
           <h2 className="font-display text-lg font-bold">Weekly working hours</h2>
           <p className="mb-4 text-sm text-stone-600">Your regular availability. Used to rank you for jobs at those times.</p>
