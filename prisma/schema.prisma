@@ -1,0 +1,623 @@
+// AllWork — universal work, hiring & collaboration marketplace.
+// One account can act as worker, client, employer and project contributor.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Identity ─────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String   @unique
+  email         String?  @unique
+  passwordHash  String
+  role          Role     @default(USER)
+  avatarUrl     String?
+  bio           String?
+  city          String?
+  area          String?
+  lat           Float?
+  lng           Float?
+  phoneVerified Boolean  @default(false)
+  idVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workerProfile  WorkerProfile?
+  skills         UserSkill[]
+  jobsPosted     Job[]                @relation("JobClient")
+  matches        JobMatch[]
+  reservations   Reservation[]
+  proposals      Proposal[]
+  bookingsAsClient Booking[]          @relation("BookingClient")
+  bookingsAsWorker Booking[]          @relation("BookingWorker")
+  calendarBlocks CalendarBlock[]
+  weeklySlots    AvailabilitySlot[]
+  projects       Project[]
+  projectApps    ProjectApplication[]
+  notifications  Notification[]
+  reviewsGiven   Review[]             @relation("ReviewAuthor")
+  reviewsReceived Review[]            @relation("ReviewTarget")
+  savedWorkers   SavedWorker[]        @relation("SavedBy")
+  savedBy        SavedWorker[]        @relation("SavedWorker")
+  verifications  Verification[]
+  sentMessages   Message[]
+  conversations  ConversationMember[]
+  otpCodes       OtpCode[]
+  disputesRaised Dispute[]
+  reportsMade    Report[]             @relation("ReportBy")
+  reportsAgainst Report[]             @relation("ReportAgainst")
+
+  @@index([city])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String
+  codeHash  String
+  purpose   String   @default("PHONE_VERIFY")
+  demoCode  String? // only set in DEMO mode (no SMS provider) so the code can be shown on screen
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+model WorkerProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  headline           String?
+  experienceYears    Int      @default(0)
+  education          String?
+  languages          String[]
+  certifications     String[]
+  portfolioLinks     String[]
+  previousWork       String?
+  workTypes          WorkType[]
+  preferredLocations String[]
+  workRadiusKm       Int      @default(15)
+  remoteOk           Boolean  @default(false)
+  hourlyRate         Int?
+  dailyRate          Int?
+  expectedComp       String?
+  isAvailable        Boolean  @default(true)
+  emergencyAvailable Boolean  @default(false)
+  // Trust metrics — computed from real activity, never from degrees.
+  reliabilityScore   Float    @default(70)
+  ratingAvg          Float    @default(0)
+  ratingCount        Int      @default(0)
+  completedJobs      Int      @default(0)
+  cancelledJobs      Int      @default(0)
+  acceptedRequests   Int      @default(0)
+  expiredReservations Int     @default(0)
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([isAvailable])
+}
+
+// ───────────────────────────── Skills ─────────────────────────────
+
+model Skill {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  category  String
+  isCustom  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  users    UserSkill[]
+  jobs     JobSkill[]
+  projects ProjectSkill[]
+
+  @@index([category])
+}
+
+model UserSkill {
+  userId  String
+  skillId String
+  years   Int     @default(0)
+  level   String  @default("INTERMEDIATE")
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId])
+  @@index([skillId])
+}
+
+// ───────────────────────────── Work marketplace ─────────────────────────────
+
+enum WorkType {
+  ONE_TIME
+  HOURLY
+  DAILY
+  WEEKLY
+  PROJECT
+  PART_TIME
+  FULL_TIME
+  PERMANENT
+  INTERNSHIP
+  CONTRACT
+}
+
+enum JobStatus {
+  OPEN
+  FILLED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Urgency {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Job {
+  id                  String    @id @default(cuid())
+  clientId            String
+  title               String
+  description         String
+  rawRequest          String?
+  category            String
+  workType            WorkType  @default(ONE_TIME)
+  workersNeeded       Int       @default(1)
+  city                String?
+  address             String?
+  lat                 Float?
+  lng                 Float?
+  isRemote            Boolean   @default(false)
+  startDate           DateTime?
+  startTime           String?
+  durationHours       Float?
+  durationText        String?
+  budgetMin           Int?
+  budgetMax           Int?
+  budgetUnit          String?
+  experienceRequired  String?
+  urgency             Urgency   @default(NORMAL)
+  specialInstructions String?
+  attachments         String[]
+  status              JobStatus @default(OPEN)
+  aiSource            String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  client       User          @relation("JobClient", fields: [clientId], references: [id], onDelete: Cascade)
+  skills       JobSkill[]
+  matches      JobMatch[]
+  reservations Reservation[]
+  proposals    Proposal[]
+  bookings     Booking[]
+  allocationEvents AllocationEvent[]
+
+  @@index([status, createdAt])
+  @@index([city])
+  @@index([clientId])
+}
+
+model JobSkill {
+  jobId   String
+  skillId String
+  job     Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill   Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, skillId])
+  @@index([skillId])
+}
+
+enum MatchStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  WAITLISTED
+  EXPIRED
+}
+
+// A work request dispatched to a worker by the matching engine.
+model JobMatch {
+  id          String      @id @default(cuid())
+  jobId       String
+  workerId    String
+  score       Float
+  breakdown   Json
+  distanceKm  Float?
+  status      MatchStatus @default(SENT)
+  wave        Int         @default(1)
+  respondedAt DateTime?
+  createdAt   DateTime    @default(now())
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker      User        @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, workerId])
+  @@index([workerId, status])
+}
+
+enum ReservationStatus {
+  HELD      // accepted request, proposal not yet submitted
+  PROPOSED  // proposal submitted; position still reserved
+  SELECTED  // client hired this worker
+  RELEASED  // worker withdrew / client declined
+  EXPIRED   // worker did not submit a proposal in time
+}
+
+// First-responder temporary hold on one position of a job.
+model Reservation {
+  id        String            @id @default(cuid())
+  jobId     String
+  workerId  String
+  status    ReservationStatus @default(HELD)
+  expiresAt DateTime
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  job       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker    User              @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  proposal  Proposal?
+
+  @@unique([jobId, workerId])
+  @@index([jobId, status])
+  @@index([status, expiresAt])
+}
+
+model AllocationEvent {
+  id        String   @id @default(cuid())
+  jobId     String
+  workerId  String?
+  type      String
+  detail    String?
+  createdAt DateTime @default(now())
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+enum PricingType {
+  HOURLY
+  DAILY
+  FIXED
+}
+
+enum ProposalStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model Proposal {
+  id                  String         @id @default(cuid())
+  reservationId       String         @unique
+  jobId               String
+  workerId            String
+  pricingType         PricingType
+  rate                Int
+  extraCharges        Int            @default(0)
+  totalEstimate       Int
+  availableDate       DateTime
+  startTime           String
+  endTime             String
+  estimatedCompletion String?
+  note                String?
+  status              ProposalStatus @default(SUBMITTED)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  reservation         Reservation    @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  job                 Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker              User           @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  booking             Booking?
+
+  @@index([jobId, status])
+}
+
+// ───────────────────────────── Calendar ─────────────────────────────
+
+// Recurring weekly availability (minutes from midnight).
+model AvailabilitySlot {
+  id        String @id @default(cuid())
+  userId    String
+  dayOfWeek Int // 0 = Sunday
+  startMin  Int
+  endMin    Int
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dayOfWeek])
+}
+
+enum BlockType {
+  BUSY
+  BOOKING
+  AVAILABLE_EXTRA
+}
+
+model CalendarBlock {
+  id        String    @id @default(cuid())
+  userId    String
+  start     DateTime
+  end       DateTime
+  type      BlockType
+  note      String?
+  bookingId String?   @unique
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, start, end])
+}
+
+// ───────────────────────────── Bookings & payments ─────────────────────────────
+
+enum BookingStatus {
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  jobId        String
+  proposalId   String        @unique
+  clientId     String
+  workerId     String
+  start        DateTime
+  end          DateTime
+  amount       Int
+  status       BookingStatus @default(CONFIRMED)
+  cancelledBy  String?
+  cancelReason String?
+  workerDoneAt DateTime?
+  clientDoneAt DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  job          Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  proposal     Proposal      @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  client       User          @relation("BookingClient", fields: [clientId], references: [id], onDelete: Cascade)
+  worker       User          @relation("BookingWorker", fields: [workerId], references: [id], onDelete: Cascade)
+  calendarBlock CalendarBlock?
+  payments     Payment[]
+  reviews      Review[]
+  disputes     Dispute[]
+  conversation Conversation?
+
+  @@index([workerId, start])
+  @@index([clientId])
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  bookingId      String
+  amount         Int
+  commission     Int
+  workerEarning  Int
+  status         PaymentStatus @default(PENDING)
+  provider       String        @default("TEST_MODE")
+  providerRef    String?
+  createdAt      DateTime      @default(now())
+  booking        Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+// ───────────────────────────── Collaboration ─────────────────────────────
+
+enum CollabType {
+  PAID
+  UNPAID_VOLUNTARY
+  REVENUE_SHARE
+  EQUITY
+  OPEN_SOURCE
+  LEARNING
+}
+
+enum ProjectStatus {
+  OPEN
+  CLOSED
+}
+
+model Project {
+  id                 String        @id @default(cuid())
+  ownerId            String
+  name               String
+  description        String
+  category           String
+  stage              String
+  collabType         CollabType
+  compensationTerms  String
+  contributorsNeeded Int           @default(1)
+  duration           String?
+  isRemote           Boolean       @default(true)
+  city               String?
+  workingHours       String?
+  responsibilities   String?
+  status             ProjectStatus @default(OPEN)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  owner              User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  skills             ProjectSkill[]
+  applications       ProjectApplication[]
+
+  @@index([status, createdAt])
+}
+
+model ProjectSkill {
+  projectId String
+  skillId   String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, skillId])
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+// An ACCEPTED application is an active collaboration.
+model ProjectApplication {
+  id        String            @id @default(cuid())
+  projectId String
+  userId    String
+  message   String
+  role      String?
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+// ───────────────────────────── Messaging & notifications ─────────────────────────────
+
+model Conversation {
+  id        String               @id @default(cuid())
+  bookingId String?              @unique
+  createdAt DateTime             @default(now())
+  booking   Booking?             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  members   ConversationMember[]
+  messages  Message[]
+}
+
+model ConversationMember {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  attachmentUrl  String?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+// ───────────────────────────── Trust ─────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String
+  authorId  String
+  targetId  String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  target    User     @relation("ReviewTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, authorId])
+  @@index([targetId])
+}
+
+model SavedWorker {
+  userId    String
+  workerId  String
+  createdAt DateTime @default(now())
+  user      User     @relation("SavedBy", fields: [userId], references: [id], onDelete: Cascade)
+  worker    User     @relation("SavedWorker", fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@id([userId, workerId])
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Verification {
+  id         String             @id @default(cuid())
+  userId     String
+  type       String // IDENTITY | SKILL | PORTFOLIO
+  details    String
+  status     VerificationStatus @default(PENDING)
+  reviewedAt DateTime?
+  createdAt  DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model Dispute {
+  id         String   @id @default(cuid())
+  bookingId  String
+  raisedById String
+  reason     String
+  status     String   @default("OPEN")
+  resolution String?
+  createdAt  DateTime @default(now())
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  raisedBy   User     @relation(fields: [raisedById], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetId   String
+  reason     String
+  status     String   @default("OPEN")
+  createdAt  DateTime @default(now())
+  reporter   User     @relation("ReportBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  target     User     @relation("ReportAgainst", fields: [targetId], references: [id], onDelete: Cascade)
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  targetId  String?
+  detail    String?
+  createdAt DateTime @default(now())
+}
