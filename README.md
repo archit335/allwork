@@ -5,16 +5,20 @@
 
 ## Quick start
 
-Requirements: Node 22+, PostgreSQL 15+.
+Requirements: Node 22+, PostgreSQL 15+. Uses Prisma 7.
 
 ```bash
-npm install
+npm install                    # also runs `prisma generate` (client goes to src/generated/prisma)
 cp .env.example .env           # set DATABASE_URL and AUTH_SECRET (openssl rand -hex 32)
-npx prisma migrate dev         # create tables
+npx prisma migrate dev         # create tables (Prisma 7 no longer seeds or generates here)
 npm run seed                   # demo skills, workers, client, admin, projects
 npm run dev                    # http://localhost:3000
 npm run test:engine            # parser + matching + first-responder allocation checks
 ```
+
+Prisma 7 notes: the DB URL is configured in `prisma.config.ts` (not the schema), the app connects
+through the `@prisma/adapter-pg` driver adapter (`src/lib/db.ts`), and after changing
+`schema.prisma` run `npm run db:generate`.
 
 Demo accounts (password `demo1234`): client `9888888888`, admin `9999999999`, workers `9000000001`–`9000000016`.
 

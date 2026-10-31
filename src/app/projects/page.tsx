@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Users, MapPin, Search } from "lucide-react";
-import type { CollabType, Prisma } from "@prisma/client";
+import type { CollabType, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { Badge, Button, Card, EmptyState, Input, LinkButton, PageHeader, Select, type Tone } from "@/components/ui";
 import { COLLAB_LABEL, timeAgo } from "@/lib/utils";

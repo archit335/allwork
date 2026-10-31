@@ -1,5 +1,5 @@
 import "server-only";
-import type { Job, WorkType } from "@prisma/client";
+import type { Job, WorkType } from "@/generated/prisma/client";
 import { db } from "./db";
 import { haversineKm, resolveCity } from "./geo";
 import { notifyMany } from "./notify";

@@ -7,21 +7,25 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts",
+    "seed": "prisma db seed",
     "typecheck": "next typegen && tsc --noEmit",
     "db:migrate": "prisma migrate dev",
-    "test:engine": "tsx --conditions=react-server scripts/test-engine.ts"
+    "test:engine": "tsx --conditions=react-server scripts/test-engine.ts",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
-    "@prisma/client": "^6.19.3",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "framer-motion": "^14.9.0",
     "jose": "^6.2.14",
     "lucide-react": "^1.65.0",
     "next": "16.4.3",
-    "prisma": "^6.19.3",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
@@ -32,10 +36,12 @@
     "@tailwindcss/turbopack": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
@@ -45,12 +51,10 @@
   },
   "allowScripts": {
     "@prisma/client@6.19.3": true,
-    "@prisma/engines@6.19.3": true,
     "esbuild@0.28.2": true,
-    "prisma@6.19.3": true,
-    "unrs-resolver@1.12.2": true
+    "unrs-resolver@1.12.2": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  }
+  "type": "module"
 }

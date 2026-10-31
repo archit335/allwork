@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck, MapPin, Search, Star } from "lucide-react";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { haversineKm, resolveCity, CITY_NAMES } from "@/lib/geo";

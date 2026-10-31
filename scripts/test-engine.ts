@@ -1,5 +1,6 @@
 // End-to-end check of AI parsing, matching and first-responder allocation
 // against the local database. Run: npm run test:engine (after npm run seed)
+import "dotenv/config";
 import assert from "node:assert/strict";
 import { db } from "../src/lib/db";
 import { parseWithRules } from "../src/lib/ai/rules";

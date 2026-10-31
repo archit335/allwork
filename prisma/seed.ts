@@ -1,11 +1,12 @@
 // Demo seed data — clearly fictional people for local development.
 // All demo accounts use password: demo1234
-import { PrismaClient, type WorkType } from "@prisma/client";
+import "dotenv/config";
+import type { WorkType } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
+import { db } from "../src/lib/db";
 import { SKILL_CATALOG } from "../src/lib/skills-catalog";
 import { CITIES } from "../src/lib/geo";
 
-const db = new PrismaClient();
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 type W = { name: string; phone: string; city: string; skills: [string, number][]; headline: string; exp: number; daily?: number; hourly?: number; types?: WorkType[]; remote?: boolean; rating?: [number, number]; done?: number };
